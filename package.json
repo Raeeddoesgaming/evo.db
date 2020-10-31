@@ -1,6 +1,6 @@
 {
   "name": "@evodev/evo.db",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "A simple local storage database that automatically setup itself for you.",
   "main": "index.js",
   "dependencies": {
@@ -22,5 +22,16 @@
     "efficient"
   ],
   "author": "nekomaru76",
-  "license": "ISC"
+  "license": "ISC",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NekoMaru76/evo.db.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NekoMaru76/evo.db/issues"
+  },
+  "homepage": "https://github.com/NekoMaru76/evo.db#readme"
 }

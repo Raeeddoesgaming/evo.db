@@ -41,10 +41,9 @@ class DB {
             fs.writeFileSync(path2, JSON.stringify(data2));
         }
 
-        let get = (document, key) => {
+        let getAllVariables = (document) => {
             if (typeof document !== "string") throw new Error(`document argument must be a string.`);
-            if (typeof key !== "string") throw new Error(`key argument must be a string.`);
-
+            
             let data_ = {};
 
             try {
@@ -56,6 +55,12 @@ class DB {
                     save(path.folder + document + ".json", data_);
                 }
             }
+
+            return data_;
+        };
+
+        let get = (document, key) => {
+            let data_ = getAllVariables(document);
 
             return lodash.get(data_, key);
         };
@@ -83,17 +88,7 @@ class DB {
         };
 
         let removeValue = (document, key) => {
-            if (typeof document !== "string") throw new Error(`document argument must be a string.`);
-            if (typeof key !== "string") throw new Error(`key argument must be a string.`);
-
-            let data_ = {};
-            
-            try {
-                data_ = require(path.folder + document + ".json");
-            } catch(err) {
-                if (!fs.existsSync(path.folder + document + ".json")) throw new Error(`Cannot found document ${document}.`);
-                else if (typeof callback === "function") callback({ path: path.folder + document + ".json", document: document });
-            }
+            let data_ = getAllVariables(document);
 
             delete data_[key];
 
@@ -113,39 +108,11 @@ class DB {
         };
 
         let keys = (document) => {
-            if (typeof document !== "string") throw new Error(`document argument must be a string.`);
-            
-            let data_ = {};
-
-            try {
-                data_ = require(path.folder + document + ".json");
-            } catch(err) {
-                if (!fs.existsSync(path.folder + document + ".json")) throw new Error(`Cannot found document ${document}.`);
-                else if (typeof callback === "function") {
-                    callback({ path: path.folder + document + ".json", document: document });
-                    save(path.folder + document + ".json", data_);
-                }
-            }
-
-            return Object.keys(data_);
+            return Object.keys(getAllVariables(document));
         }
 
         let values = (document) => {
-            if (typeof document !== "string") throw new Error(`document argument must be a string.`);
-            
-            let data_ = {};
-
-            try {
-                data_ = require(path.folder + document + ".json");
-            } catch(err) {
-                if (!fs.existsSync(path.folder + document + ".json")) throw new Error(`Cannot found document ${document}.`);
-                else if (typeof callback === "function") {
-                    callback({ path: path.folder + document + ".json", document: document });
-                    save(path.folder + document + ".json", data_);
-                }
-            }
-
-            return Object.values(data_);
+            return Object.values(getAllVariables(document));
         };
 
         let remove = async (document) => {
@@ -189,6 +156,10 @@ class DB {
             return false;
         };
 
+        let entries = (document) => {
+            return Object.entries(getAllVariables(document));
+        }
+
         this.set         = set;
         this.get         = get;
         this.push        = push;
@@ -199,6 +170,8 @@ class DB {
         this.create      = create;
         this.isExist     = isDocumentExist;
         this.removeValue = removeValue;
+        this.getAll      = getAllVariables;
+        this.entries     = entries;
     }
 }
 

@@ -41,6 +41,12 @@ Is a local storage database that is very easy to use.
 `DB#values(name)` Get all values of document.
 - `name` (`String`) Name of document.
 
+`DB#entries(name)` Get entries of document.
+- `name` (`String`) Name of document.
+
+`DB#getAll(name)` Get all variables of document.
+- `name` (`String`) Name of document.
+
 `DB#removeValue(name, key)` (Beta) Remove a value of document by key.
 - `name` (`String`) Name of document.
 - `key` (`String`) Name of variable.

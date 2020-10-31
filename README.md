@@ -35,54 +35,57 @@ Is a local storage database that is very easy to use.
 - `key` (`String`) Name of variable.
 - `value` (`String`/`Non Circular Object`/`JSON`/`Array`/`Number`) Item that want to get pushed to a variable.
 
-`DB#keys(name)` Get all keys of document.
+`DB#getKeys(name)` Get all keys of document.
 - `name` (`String`) Name of document.
 
-`DB#values(name)` Get all values of document.
+`DB#getValues(name)` Get all values of document.
 - `name` (`String`) Name of document.
 
-`DB#entries(name)` Get entries of document.
+`DB#getEntries(name)` Get entries of document.
 - `name` (`String`) Name of document.
 
 `DB#getAll(name)` Get all variables of document.
 - `name` (`String`) Name of document.
 
-`DB#removeValue(name, key)` (Beta) Remove a value of document by key.
+`DB#remove(name, key)` (Beta) Remove a value of document by key.
 - `name` (`String`) Name of document.
 - `key` (`String`) Name of variable.
 
 ## Example
 ```js
 let DB = require("@evodev/evo.db");
-let db = new DB({ folder: __dirname + "/" }, (data) => {
+let db = new DB({
+    folder: __dirname + "/"
+}, (data) => {
     console.log(`Document ${data.document} is corrupted! Successfully fixed the document.`);
 });
 
-(async function() {
-    if (!await db.isExist("test")) {
-        await db.create("test");
+if (!db.isExist("test")) {
+    db.create("test");
 
-        console.log(`Cannot found document "test". Successfully to make it.`);
-    }
+    console.log(`Cannot found document "test". Successfully to make it.`);
+}
 
-    if (!db.get("test", "count")) {
-        db.set("test", "count", 1);
+if (!db.get("test", "count")) {
+    db.set("test", "count", 1);
 
-        console.log(`Cannot found variable "count" in document "test". Successfully to make it.`);
-    } else {
-        db.add("test", "count", 1);
+    console.log(`Cannot found variable "count" in document "test". Successfully to make it.`);
+} else {
+    db.add("test", "count", 1);
 
-        console.log(`Added 1 into "count"'s value in "test" document.`);
-    }
+    console.log(`Added 1 into "count"'s value in "test" document.`);
+}
 
-    console.log(`Count: ${db.get("test", "count")}`);
+console.log(`Count: ${db.get("test", "count")}`);
+console.log(`All keys of document "test": ${db.getKeys("test")}`);
+console.log(`All values of document "test": ${db.getValues("test")}`);
 
-    if (db.get("test", "count") === 3) {
-        db.delete("test");
+if (db.get("test", "count") > 2) {
+    db.remove("test", "count");
+    db.delete("test");
 
-        console.log(`Count reached 3! Deleted "test" document.`);
-    }
-})();
+    console.log(`Count reached 3! Deleted "test" document.`);
+}
 ```
 
 ## Developer

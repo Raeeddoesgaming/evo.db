@@ -1,14 +1,13 @@
 const fs     = require("fs");
 const lodash = require("lodash");
 
-async function checkDir(path) {
-    return await new Promise((resolve, reject) => {
-        fs.access(path, function(err) {
-            if (err && err.code === 'ENOENT') {
-                resolve(false);
-            } else resolve(true);
-        });
-    });
+function checkDir(path) {
+    try {
+        fs.readdirSync(path);
+        return true;
+    } catch(err) { 
+        return false;
+    }
 }
 
 function isCyclic(obj) {
@@ -33,145 +32,130 @@ function isCyclic(obj) {
   }
 
 class DB {
-    constructor(path = { folder: "./" }, callback = () => {}) {
-        if (typeof path !== "object") throw new Error("Path is not an object.");
-        if (!(fs.existsSync(path.folder))) throw new Error(`Cannot found directory "${path.folder}".`);
+    constructor(config = { folder: "./" }, callback = () => {}) {
+        if (typeof config !== "object") throw new Error("Config is not an object.");
+        if (!checkDir(config.folder)) throw new Error(`Cannot found directory "${config.folder}".`);
+        if (!config.folder.endsWith("/")) config.folder += "/";
 
-        function save(path2, data2) {
-            fs.writeFileSync(path2, JSON.stringify(data2));
-        }
+        this.config   = config;
+        this.callback = callback;
+    }
+    save(document, data) {
+        fs.writeFileSync(`${this.config.folder}${document}.json`, JSON.stringify(data));
+    }
+    getAll(document) {
+        if (typeof document !== "string") throw new Error(`document argument must be a string.`);
+        
+        let data = {};
 
-        let getAllVariables = (document) => {
-            if (typeof document !== "string") throw new Error(`document argument must be a string.`);
-            
-            let data_ = {};
+        const { config, callback } = this;
+        const fullPath             = `${config.folder}${document}.json`
 
-            try {
-                data_ = require(path.folder + document + ".json");
-            } catch(err) {
-                if (!fs.existsSync(path.folder + document + ".json")) throw new Error(`Cannot found document ${document}.`);
-                else if (typeof callback === "function") {
-                    callback({ path: path.folder + document + ".json", document: document });
-                    save(path.folder + document + ".json", data_);
-                }
+        try {
+            data = require(fullPath);
+        } catch(err) {
+            if (!fs.existsSync(fullPath)) throw new Error(`Cannot found document ${document}.`);
+            else if (typeof callback === "function") {
+                callback({ path: fullPath, document: document });
+                this.save(document, data);
             }
-
-            return data_;
-        };
-
-        let get = (document, key) => {
-            let data_ = getAllVariables(document);
-
-            return lodash.get(data_, key);
-        };
-
-        let set = (document, key, val) => {
-            if (typeof document !== "string") throw new Error(`document argument must be a string.`);
-            if (typeof key !== "string") throw new Error(`key argument must be a string.`);
-
-            let data_ = {};
-            
-            try {
-                data_ = require(path.folder + document + ".json");
-            } catch(err) {
-                if (!fs.existsSync(path.folder + document + ".json")) throw new Error(`Cannot found document ${document}.`);
-                else if (typeof callback === "function") callback({ path: path.folder + document + ".json", document: document });
-            }
-
-            if (isCyclic(val)) throw new Error(`value argument cannot be a circular object.`);
-
-            lodash.set(data_, key, val);
-
-            save((path.folder + document + ".json"), data_);
-
-            return get(document, key);
-        };
-
-        let removeValue = (document, key) => {
-            let data_ = getAllVariables(document);
-
-            delete data_[key];
-
-            save((path.folder + document + ".json"), data_);
-
-            return true;
         }
 
-        let push = (document, key, val) => {
-            if (!Array.isArray(get(document, key))) throw new Error(`${key}'s value is not an array.`);
+        return data;
+    }
+    get(document, key) {
+        let data = this.getAll(document);
 
-            if (isCyclic(val)) throw new Error(`value argument cannot be a circular object.`);
+        return lodash.get(data, key);
+    }
+    set(document, key, val) {
+        if (typeof document !== "string") throw new Error(`document argument must be a string.`);
+        if (typeof key !== "string") throw new Error(`key argument must be a string.`);
 
-            let o = get(document, key);
-            o.push(val);
-            return set(document, key, o);
-        };
+        let data = {};
+        
+        const { config, callback } = this;
+        const fullPath             = `${config.folder}${document}.json`;
 
-        let keys = (document) => {
-            return Object.keys(getAllVariables(document));
+        try {
+            data = require(fullPath);
+        } catch(err) {
+            if (!fs.existsSync(fullPath)) throw new Error(`Cannot found document ${document}.`);
+            else if (typeof callback === "function") callback({ path: fullPath, document: document });
         }
 
-        let values = (document) => {
-            return Object.values(getAllVariables(document));
-        };
+        if (isCyclic(val)) throw new Error(`value argument cannot be a circular object.`);
 
-        let remove = async (document) => {
-            if (!(await checkDir(path.folder + document + ".json"))) throw new Error(`Cannot found document ${document}.`);
+        lodash.set(data, key, val);
+        this.save(document, data);
 
-            fs.unlinkSync(path.folder + document + ".json");
+        return this.get(document, key);
+    }
+    remove(document, key) {
+        let data = this.getAll(document);
 
-            return true;
-        }
+        delete data[key];
 
-        let create = async (document) => {
-            if ((await checkDir(path.folder + document + ".json"))) throw new Error(`Document ${document} is already exist.`);
+        this.save(document, data);
 
-            fs.writeFileSync(path.folder + document + ".json", JSON.stringify({}));
+        return true;
+    }
+    push(document, key, val) {
+        let o = this.get(document, key);
 
-            return true;
-        }
+        if (!Array.isArray(o)) throw new Error(`${key}'s value is not an array.`);
+        if (isCyclic(val)) throw new Error(`value argument cannot be a circular object.`);
 
-        let add = (document, key, val) => {
-            let v = get(document, key);
+        o.push(val);
+        return this.set(document, key, o);
+    }
+    isExist(document) {
+        if (fs.existsSync(`${this.config.folder}${document}.json`) && !checkDir(`${this.config.folder}${document}.json`)) return true;
 
-            if (!v && isNaN(v)) throw new Error(`${key}'s value is not defined.`);
-            if (!Array.isArray(v) && isNaN(v)) throw new Error(`${key}'s value is not an array or a number.`);
-            if (isNaN(val) && !isNaN(v)) throw new Error(`Value argument must be a number if ${key}'s value is a number.`);
-            
-            if (isCyclic(val)) throw new Error(`value argument cannot be a circular object.`);
+        return false;
+    }
+    getKeys(document) {
+        return Object.keys(this.getAll(document));
+    }
+    getValues(document) {
+        return Object.values(this.getAll(document));
+    }
+    getEntries(document) {
+        return Object.entries(this.getAll(document));
+    }
+    delete(document) {
+        const name = `${this.config.folder}${document}.json`;
 
-            if (Array.isArray(v)) {
-                v.push(val);
-                set(document, key, v);
-            } else if (!isNaN(v) && !isNaN(val)) {
-                set(document, key, v+val);
-            } else throw new Error(`???`);
+        if (!fs.existsSync(name)) throw new Error(`Cannot found document ${document}.`);
 
-            return get(document, key);
-        };
+        fs.unlinkSync(name);
 
-        let isDocumentExist = async (document) => {
-            if (fs.existsSync(path.folder + document + ".json")) return true;
+        return true;
+    }
+    create(document) {
+        const name = `${this.config.folder}${document}.json`;
 
-            return false;
-        };
+        if (fs.existsSync(name)) throw new Error(`Document ${document} is already exist.`);
 
-        let entries = (document) => {
-            return Object.entries(getAllVariables(document));
-        }
+        fs.writeFileSync(name, JSON.stringify({}));
 
-        this.set         = set;
-        this.get         = get;
-        this.push        = push;
-        this.keys        = keys;
-        this.values      = values;
-        this.add         = add;
-        this.delete      = remove;
-        this.create      = create;
-        this.isExist     = isDocumentExist;
-        this.removeValue = removeValue;
-        this.getAll      = getAllVariables;
-        this.entries     = entries;
+        return true;
+    }
+    add(document, key, val) {
+        let v = this.get(document, key);
+
+        if (!v && isNaN(v)) throw new Error(`${key}'s value is not defined.`);
+        if (!Array.isArray(v) && isNaN(v)) throw new Error(`${key}'s value is not an array or a number.`);
+        if (isNaN(val) && !isNaN(v)) throw new Error(`Value argument must be a number if ${key}'s value is a number.`);
+        if (isCyclic(val)) throw new Error(`value argument cannot be a circular object.`);
+        if (Array.isArray(v)) {
+            v.push(val);
+            this.set(document, key, v);
+        } else if (!isNaN(v) && !isNaN(val)) {
+            this.set(document, key, v+val);
+        } else throw new Error(`???`);
+
+        return this.get(document, key);
     }
 }
 

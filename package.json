@@ -1,0 +1,26 @@
+{
+  "name": "@evodev/evo.db",
+  "version": "3.0.2",
+  "description": "A simple local storage database that automatically setup itself for you.",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "^4.17.20"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "localstorage",
+    "database",
+    "local",
+    "storage",
+    "evodev",
+    "automatically",
+    "setup",
+    "easy",
+    "efficient"
+  ],
+  "author": "nekomaru76",
+  "license": "ISC"
+}

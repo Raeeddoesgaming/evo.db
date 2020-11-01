@@ -8,13 +8,13 @@ let db = new DB({
 if (!db.isExist("test")) {
     db.create("test");
 
-    console.log(`Cannot found document "test". Successfully to make it.`);
+    console.log(`Cannot find document "test". Successfully to make it.`);
 }
 
 if (!db.get("test", "count")) {
     db.set("test", "count", 1);
 
-    console.log(`Cannot found variable "count" in document "test". Successfully to make it.`);
+    console.log(`Cannot find variable "count" in document "test".`);
 } else {
     db.add("test", "count", 1);
 

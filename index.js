@@ -54,7 +54,7 @@ class DB {
         try {
             data = require(fullPath);
         } catch(err) {
-            if (!fs.existsSync(fullPath)) throw new Error(`Cannot found document ${document}.`);
+            if (!fs.existsSync(fullPath)) throw new Error(`Cannot find document ${document}.`);
             else if (typeof callback === "function") {
                 callback({ path: fullPath, document: document });
                 this.save(document, data);
@@ -80,7 +80,7 @@ class DB {
         try {
             data = require(fullPath);
         } catch(err) {
-            if (!fs.existsSync(fullPath)) throw new Error(`Cannot found document ${document}.`);
+            if (!fs.existsSync(fullPath)) throw new Error(`Cannot find document ${document}.`);
             else if (typeof callback === "function") callback({ path: fullPath, document: document });
         }
 
@@ -126,7 +126,7 @@ class DB {
     delete(document) {
         const name = `${this.config.folder}${document}.json`;
 
-        if (!fs.existsSync(name)) throw new Error(`Cannot found document ${document}.`);
+        if (!fs.existsSync(name)) throw new Error(`Cannot find document ${document}.`);
 
         fs.unlinkSync(name);
 
@@ -135,7 +135,7 @@ class DB {
     create(document) {
         const name = `${this.config.folder}${document}.json`;
 
-        if (fs.existsSync(name)) throw new Error(`Document ${document} is already exist.`);
+        if (fs.existsSync(name)) throw new Error(`Document ${document} already exists.`);
 
         fs.writeFileSync(name, JSON.stringify({}));
 
